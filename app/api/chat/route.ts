@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Anthropic from "@anthropic-ai/sdk";
 import { searchRAG } from "@/lib/supabase";
 
