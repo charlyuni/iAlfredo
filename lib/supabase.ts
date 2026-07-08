@@ -1,14 +1,31 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+let _supabaseAdmin: SupabaseClient | undefined;
+let _supabase: SupabaseClient | undefined;
 
-// Server-side client (full access)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+// Server-side client (full access) — created lazily so importing this module
+// doesn't throw during build-time page data collection when env vars aren't
+// yet available (e.g. Vercel preview deploys without Preview-scoped env vars).
+export function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return _supabaseAdmin;
+}
 
 // Client-side client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+  return _supabase;
+}
 
 export async function searchRAG(query: string, topK = 8) {
   const { OpenAI } = await import("openai");
@@ -21,7 +38,7 @@ export async function searchRAG(query: string, topK = 8) {
 
   const embedding = embeddingRes.data[0].embedding;
 
-  const { data, error } = await supabaseAdmin.rpc("match_documents", {
+  const { data, error } = await getSupabaseAdmin().rpc("match_documents", {
     query_embedding: embedding,
     match_count: topK,
     filter: {},
@@ -32,7 +49,7 @@ export async function searchRAG(query: string, topK = 8) {
 }
 
 export async function getLatestMetrics() {
-  const { data } = await supabaseAdmin
+  const { data } = await getSupabaseAdmin()
     .from("indicadores_reportes")
     .select("*")
     .order("created_at", { ascending: false })
@@ -41,7 +58,7 @@ export async function getLatestMetrics() {
 }
 
 export async function getRecentDocuments(limit = 10) {
-  const { data } = await supabaseAdmin
+  const { data } = await getSupabaseAdmin()
     .from("documents")
     .select("metadata, id")
     .order("id", { ascending: false })
