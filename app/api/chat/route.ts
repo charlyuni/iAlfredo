@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       try {
         // Send sources first
         if (sources.length > 0) {
-          const uniqueSources = [...new Set(sources)];
+          const uniqueSources = Array.from(new Set(sources));
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ type: "sources", sources: uniqueSources })}\n\n`)
           );
